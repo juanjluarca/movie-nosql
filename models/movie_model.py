@@ -31,6 +31,36 @@ def add_review(movie_id, review):
             }}
         )
 
+def delete_review(movie_id, review_index):
+    """Elimina una reseña por su índice"""
+    movie = peliculas.find_one({"_id": ObjectId(movie_id)})
+    reseñas = movie.get("reseñas", [])
+    
+    if 0 <= review_index < len(reseñas):
+        reseñas.pop(review_index)
+        peliculas.update_one(
+            {"_id": ObjectId(movie_id)},
+            {"$set": {"reseñas": reseñas}}
+        )
+        
+        if reseñas:
+            promedio = sum(r["puntuacion"] for r in reseñas) / len(reseñas)
+            peliculas.update_one(
+                {"_id": ObjectId(movie_id)},
+                {"$set": {
+                    "estadisticas.calificacion_promedio": round(promedio, 2),
+                    "estadisticas.total_reseñas": len(reseñas)
+                }}
+            )
+        else:
+            peliculas.update_one(
+                {"_id": ObjectId(movie_id)},
+                {"$set": {
+                    "estadisticas.calificacion_promedio": 0,
+                    "estadisticas.total_reseñas": 0
+                }}
+            )
+
 def delete_movie(movie_id):
     peliculas.delete_one({"_id": ObjectId(movie_id)})
 
@@ -39,3 +69,4 @@ def update_movie(movie_id, data):
         {"_id": ObjectId(movie_id)},
         {"$set": data}
     )
+    

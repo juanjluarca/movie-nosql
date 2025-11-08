@@ -10,20 +10,61 @@ class AddMovieWindow(QDialog):
         self.movie = movie
 
         self.setWindowTitle("Editar Película" if edit_mode else "Agregar Película")
-        self.setGeometry(350, 200, 400, 320)
+        self.setGeometry(350, 200, 450, 400)
+        
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #1e1e1e;
+            }
+            QLineEdit, QTextEdit {
+                padding: 8px;
+                border: 2px solid #3d3d3d;
+                border-radius: 4px;
+                background-color: #2d2d2d;
+                color: #e0e0e0;
+                font-size: 13px;
+            }
+            QLineEdit:focus, QTextEdit:focus {
+                border: 2px solid #2196F3;
+            }
+            QPushButton {
+                background-color: #2196F3;
+                color: white;
+                padding: 10px;
+                border: none;
+                border-radius: 4px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #1976D2;
+            }
+            QLabel {
+                font-size: 13px;
+                color: #b0b0b0;
+            }
+        """)
+        
         layout = QVBoxLayout()
+        layout.setSpacing(15)
 
         form = QFormLayout()
+        form.setSpacing(10)
+        
         self.titulo = QLineEdit()
         self.anio = QLineEdit()
         self.genero = QLineEdit()
         self.director = QLineEdit()
+        self.imagen_url = QLineEdit()
+        self.imagen_url.setPlaceholderText("https://ejemplo.com/imagen.jpg")
         self.sinopsis = QTextEdit()
+        self.sinopsis.setMaximumHeight(100)
 
         form.addRow("Título:", self.titulo)
         form.addRow("Año:", self.anio)
         form.addRow("Género:", self.genero)
         form.addRow("Director:", self.director)
+        form.addRow("URL Imagen:", self.imagen_url)
         form.addRow("Sinopsis:", self.sinopsis)
 
         layout.addLayout(form)
@@ -40,14 +81,16 @@ class AddMovieWindow(QDialog):
         self.anio.setText(str(movie["anio"]))
         self.genero.setText(", ".join(movie["genero"]))
         self.director.setText(movie["director"])
+        self.imagen_url.setText(movie.get("imagen_url", ""))
         self.sinopsis.setText(movie["sinopsis"])
 
     def save_movie(self):
         data = {
             "titulo": self.titulo.text(),
             "anio": int(self.anio.text()),
-            "genero": self.genero.text().split(","),
+            "genero": [g.strip() for g in self.genero.text().split(",")],
             "director": self.director.text(),
+            "imagen_url": self.imagen_url.text(),
             "sinopsis": self.sinopsis.toPlainText()
         }
 
