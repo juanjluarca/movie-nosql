@@ -1,14 +1,14 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QLabel, QListWidget, QListWidgetItem, QMessageBox
+    QWidget, QVBoxLayout, QPushButton, QLabel, QListWidget, QListWidgetItem
 )
 from ui.add_movie import AddMovieWindow
 from ui.movie_detail import MovieDetailWindow
-from mock_data import MOCK_MOVIES
+from models.movie_model import get_all_movies
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Películas")
+        self.setWindowTitle("Películas Review")
         self.setGeometry(200, 100, 600, 500)
         self.layout = QVBoxLayout()
 
@@ -30,18 +30,21 @@ class MainWindow(QWidget):
 
     def load_movies(self):
         self.movie_list.clear()
-        for movie in MOCK_MOVIES:
+        for movie in get_all_movies():
             stats = movie.get("estadisticas", {})
             promedio = stats.get("calificacion_promedio", "N/A")
-            item = QListWidgetItem(f"{movie['titulo']} ({movie['anio']}) - Calificación promedio: {promedio}")
-            item.setData(1000, movie["_id"])
+            item = QListWidgetItem(f"{movie['titulo']} ({movie['anio']}) ⭐ {promedio}")
+            item.setData(1000, str(movie["_id"]))
             self.movie_list.addItem(item)
 
     def open_add_movie(self):
         dialog = AddMovieWindow(self)
-        dialog.exec()
+        result = dialog.exec()
+        if result:
+            self.load_movies()
 
     def open_movie_detail(self, item):
         movie_id = item.data(1000)
         self.detail_window = MovieDetailWindow(movie_id)
+        self.detail_window.movie_updated.connect(self.load_movies)
         self.detail_window.show()

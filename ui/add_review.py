@@ -1,9 +1,13 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QLineEdit, QTextEdit, QSpinBox, QPushButton, QMessageBox
 )
+from PyQt6.QtCore import pyqtSignal
 from datetime import datetime
+from models.movie_model import add_review
 
 class AddReviewWindow(QWidget):
+    review_added = pyqtSignal()
+
     def __init__(self, movie_id):
         super().__init__()
         self.movie_id = movie_id
@@ -30,17 +34,14 @@ class AddReviewWindow(QWidget):
         self.setLayout(layout)
 
     def save_review(self):
-        if not self.usuario.text() or not self.pais.text() or not self.comentario.toPlainText():
-            QMessageBox.warning(
-                self,
-                "Campos incompletos",
-                "Por favor complete todos los campos."
-            )
-            return
-        
-        QMessageBox.information(
-            self,
-            "testing",
-            f"Reseña agregada correctamente."
-        )
+        review = {
+            "usuario": self.usuario.text(),
+            "pais": self.pais.text(),
+            "puntuacion": self.puntuacion.value(),
+            "comentario": self.comentario.toPlainText(),
+            "fecha": datetime.now().strftime("%Y-%m-%d")
+        }
+        add_review(self.movie_id, review)
+        QMessageBox.information(self, "Éxito", "Reseña agregada correctamente.")
+        self.review_added.emit()
         self.close()

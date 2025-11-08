@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QLineEdit, QTextEdit, QPushButton, QMessageBox
 )
+from models.movie_model import add_movie, update_movie
 
 class AddMovieWindow(QDialog):
     def __init__(self, parent=None, edit_mode=False, movie=None):
@@ -42,18 +43,21 @@ class AddMovieWindow(QDialog):
         self.sinopsis.setText(movie["sinopsis"])
 
     def save_movie(self):
-        if not self.titulo.text() or not self.anio.text():
-            QMessageBox.warning(
-                self,
-                "Incompleto",
-                "Complete título y año"
-            )
-            return
-        
-        accion = "actualizada" if self.edit_mode else "agregada"
-        QMessageBox.information(
-            self,
-            "demo",
-            f"Película {accion} correctamente."
-        )
+        data = {
+            "titulo": self.titulo.text(),
+            "anio": int(self.anio.text()),
+            "genero": self.genero.text().split(","),
+            "director": self.director.text(),
+            "sinopsis": self.sinopsis.toPlainText()
+        }
+
+        if self.edit_mode:
+            update_movie(self.movie["_id"], data)
+            QMessageBox.information(self, "Éxito", "Película actualizada correctamente.")
+        else:
+            data["reseñas"] = []
+            data["estadisticas"] = {"calificacion_promedio": 0, "total_reseñas": 0}
+            add_movie(data)
+            QMessageBox.information(self, "Éxito", "Película agregada correctamente.")
+
         self.accept()
