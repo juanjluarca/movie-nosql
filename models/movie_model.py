@@ -72,4 +72,34 @@ def update_movie(movie_id, data):
 
 def get_movies_sorted_by_rating(order="desc"):
     sort_order = -1 if order == "desc" else 1
-    return list(peliculas.find().sort("estadisticas.calificacion_promedio", sort_order))
+    pipeline = [
+        {"$sort": {"estadisticas.calificacion_promedio": sort_order}}
+    ]
+    return list(peliculas.aggregate(pipeline))
+
+def search_movies_by_name(name):
+    try:
+        import re
+        regex = re.compile(f'.*{re.escape(name)}.*', re.IGNORECASE)
+        movies = list(peliculas.find({"titulo": regex}))
+        return movies
+    except Exception as e:
+        print(f"Error en búsqueda: {e}")
+        return []
+
+def search_movies_advanced(search_term):
+    try:
+        import re
+        regex = re.compile(f'.*{re.escape(search_term)}.*', re.IGNORECASE)
+        movies = list(peliculas.find({
+            "$or": [
+                {"titulo": regex},
+                {"director": regex},
+                {"genero": regex},
+                {"reparto": regex}
+            ]
+        }))
+        return movies
+    except Exception as e:
+        print(f"Error en búsqueda avanzada: {e}")
+        return []
