@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget, 
-    QMessageBox, QScrollArea, QFrame
+    QMessageBox, QScrollArea, QFrame, QComboBox
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QPixmap, QFont
@@ -218,6 +218,42 @@ class MovieDetailWindow(QWidget):
             }
         """)
         self.btn_add_review.clicked.connect(self.open_add_review)
+
+        self.cb_review_filter = QComboBox()
+        self.cb_review_filter.addItems(["Filtrar por:", "Positivas", "Negativas"])
+
+        
+        self.cb_review_filter.setStyleSheet(
+            """QComboBox {
+                background-color: #2b2b2b;
+                color: #ffffff;
+                border: 1px solid #444;
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 13px;
+                font-weight: 500;
+            }
+            QComboBox:hover {
+                border: 1px solid #5cb85c; 
+            }
+            QComboBox:drop-down {
+                background-color: #525252;
+            }
+
+            QComboBox QAbstractItemView {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444;
+                selection-background-color: #5cb85c;
+                selection-color: #ffffff;
+            }
+
+            """
+        )
+
+        self.cb_review_filter.currentIndexChanged.connect(self.reload_reviews)
+
+        reviews_header.addWidget(self.cb_review_filter)
         reviews_header.addWidget(self.btn_add_review)
         
         self.layout.addLayout(reviews_header)
@@ -228,20 +264,29 @@ class MovieDetailWindow(QWidget):
         self.reload_reviews()
     
     def reload_reviews(self):
-        """Recarga la lista de reseñas desde la base de datos"""
         for i in reversed(range(self.reviews_container.count())):
             item = self.reviews_container.itemAt(i)
             if item.widget():
                 item.widget().setParent(None)
             elif item.layout():
                 self.clear_layout(item.layout())
-        
+
         self.movie = get_movie_by_id(self.movie_id)
         reviews = self.movie.get("reseñas", [])
-        
+
+        filter_text = self.cb_review_filter.currentText()
+
+        if filter_text == "Positivas":
+            reviews = [r for r in reviews if r.get("puntuacion", 0) >= 4]
+        elif filter_text == "Negativas":
+            reviews = [r for r in reviews if r.get("puntuacion", 0) <= 2]
+
         if not reviews:
-            no_reviews = QLabel("No hay reseñas aún. ¡Sé el primero en agregar una!")
-            no_reviews.setStyleSheet("color: #6d6d6d; font-size: 14px; padding: 20px; background-color: #2d2d2d; border-radius: 8px;")
+            no_reviews = QLabel("No hay reseñas que coincidan con el filtro seleccionado.")
+            no_reviews.setStyleSheet(
+                "color: #6d6d6d; font-size: 14px; padding: 20px; "
+                "background-color: #2d2d2d; border-radius: 8px;"
+            )
             no_reviews.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.reviews_container.addWidget(no_reviews)
         else:
@@ -255,26 +300,26 @@ class MovieDetailWindow(QWidget):
                     }
                 """)
                 review_layout = QVBoxLayout()
-                
+
                 header = QHBoxLayout()
-                
+
                 user_info = QLabel(f"{r['usuario']} • {r['pais']}")
                 user_font = QFont()
                 user_font.setBold(True)
                 user_info.setFont(user_font)
                 user_info.setStyleSheet("color: #e0e0e0; font-size: 14px;")
                 header.addWidget(user_info)
-                
+
                 header.addStretch()
-                
+
                 rating = QLabel(f"{r['puntuacion']}/5")
                 rating.setStyleSheet("color: #FF9800; font-size: 13px; font-weight: bold;")
                 header.addWidget(rating)
-                
+
                 date = QLabel(r.get('fecha', ''))
                 date.setStyleSheet("color: #6d6d6d; font-size: 12px;")
                 header.addWidget(date)
-                
+
                 btn_delete_review = QPushButton("×")
                 btn_delete_review.setFixedSize(30, 30)
                 btn_delete_review.setStyleSheet("""
@@ -293,19 +338,23 @@ class MovieDetailWindow(QWidget):
                 """)
                 btn_delete_review.clicked.connect(lambda checked, i=idx: self.delete_review_confirm(i))
                 header.addWidget(btn_delete_review)
-                
+
                 review_layout.addLayout(header)
-                
+
                 comment = QLabel(r['comentario'])
                 comment.setWordWrap(True)
                 comment.setStyleSheet("color: #b0b0b0; font-size: 13px; margin-top: 8px;")
                 review_layout.addWidget(comment)
-                
+
                 review_card.setLayout(review_layout)
                 self.reviews_container.addWidget(review_card)
-        
+
         stats = self.movie.get('estadisticas', {})
-        self.rating_label.setText(f"Calificación: {stats.get('calificacion_promedio', 0)}/5 ({stats.get('total_reseñas', 0)} reseñas)")
+        self.rating_label.setText(
+            f"Calificación: {stats.get('calificacion_promedio', 0)}/5 "
+            f"({stats.get('total_reseñas', 0)} reseñas)"
+        )
+
     
     def open_add_review(self):
         self.add_review = AddReviewWindow(self.movie_id)
