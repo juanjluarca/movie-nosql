@@ -69,4 +69,7 @@ def update_movie(movie_id, data):
         {"_id": ObjectId(movie_id)},
         {"$set": data}
     )
-    
+
+def get_movies_sorted_by_rating(order="desc"):
+    sort_order = -1 if order == "desc" else 1
+    return list(peliculas.find().sort("estadisticas.calificacion_promedio", sort_order))
